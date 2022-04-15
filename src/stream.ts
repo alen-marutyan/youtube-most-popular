@@ -1,9 +1,9 @@
-import {google} from "googleapis";
 import AWS from "aws-sdk";
+import {google} from "googleapis";
 
-let YouTube_API: string, YOUTUBE_TABLE: string;
+let YouTube_API: string, MY_TABLE: string;
 YouTube_API = process.env["YouTube_API"];
-YOUTUBE_TABLE = process.env["YOUTUBE_TABLE"];
+MY_TABLE = process.env["MY_TABLE"];
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 
@@ -21,39 +21,30 @@ export const handler = async (event) => {
         "chart": "mostPopular",
     });
 
-    let title = [];
+    const batchParams = [];
 
-    event.Records.forEach(el=>{
-        console.log('amen mi element', el.dynamodb)
-        title.push(el.dynamodb.Keys.title.S);
-    });
+    for (const el of event.Records) {
+        const streamData = res.data.items.find(item => item.snippet.title === el.dynamodb.Keys.title.S);
+        const params = {
+            PutRequest: {
+                Item: {
+                    "videoId": streamData.id,
+                    "duration": streamData.contentDetails.duration
+                }
+            }
+        }
+        batchParams.push(params);
+    }
 
+    const batchPutItems = {
+        RequestItems: {
+            'my_table': batchParams
+        }
+    };
 
-  let items = [];
-  for (let i = 0; i < res.data.items.length; i++){
-      for (let j = 0; j < title.length; j++) {
-          if (res.data.items[i].snippet.title == title[j]) {
-              items.push({
-                  videoId: res.data.items[i].id,
-                  duration: res.data.items[i].contentDetails.duration
-              });
-          }
+    await docClient.batchWrite(batchPutItems).promise();
 
-      }
-
-  }
-
-
-
- for (const el of items) {
-     await docClient.put({
-          TableName: 'my_table',
-          Item: el
-     }).promise();
-  }
-
- return {
-     statusCode: 200
- }
-
+    return {
+        statusCode: 200
+    }
 }

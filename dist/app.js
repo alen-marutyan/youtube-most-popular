@@ -24,59 +24,6 @@ const service = googleapis_1.google.youtube({
     auth: YouTube_API
 });
 const handler = (event) => __awaiter(void 0, void 0, void 0, function* () {
-    // const res = await service.videos.list({
-    //   "part": [
-    //     "snippet, contentDetails, statistics"
-    //   ],
-    //   "chart": "mostPopular",
-    // });
-    // const y = [];
-    // res.data.items.forEach(el => {
-    //   y.push({
-    //     PutRequest: {
-    //       Item: {
-    //         title: el.snippet.title,
-    //         count: 0
-    //       }
-    //     }
-    //   });
-    // });
-    // for (const el of res.data.items) {
-    //   const getItem = await docClient.get({
-    //     TableName: YOUTUBE_TABLE,
-    //     Key: {
-    //       title: el.snippet.title,
-    //     }
-    //   }).promise();
-    //   if (getItem.Item) {
-    //     await docClient.update({
-    //       TableName: YOUTUBE_TABLE,
-    //       Key: {
-    //         title: getItem.Item.title,
-    //       },
-    //       UpdateExpression: "set #createdate = :createdate",
-    //       ExpressionAttributeNames: {
-    //         '#createdate': 'count'
-    //       },
-    //       ExpressionAttributeValues: {
-    //         ':createdate': getItem.Item.count + 1
-    //       },
-    //       ReturnValues: 'UPDATED_NEW'
-    //     }).promise();
-    //   }
-    //   else {
-    //     await docClient.put({
-    //       TableName: YOUTUBE_TABLE,
-    //       Item: {
-    //         title: el.snippet.title,
-    //         count: 0,
-    //       }
-    //     }).promise();
-    //   }
-    // }
-    // return {
-    //   statusCode: 200
-    // };
     const res = yield service.videos.list({
         "part": [
             "snippet, contentDetails, statistics"
@@ -95,7 +42,7 @@ const handler = (event) => __awaiter(void 0, void 0, void 0, function* () {
         });
     });
     let getItem;
-    let arr = [];
+    const params = [];
     for (const el of res.data.items) {
         getItem = yield docClient.get({
             TableName: YOUTUBE_TABLE,
@@ -104,7 +51,7 @@ const handler = (event) => __awaiter(void 0, void 0, void 0, function* () {
             }
         }).promise();
         if (getItem.Item) {
-            arr.push(docClient.update({
+            params.push(docClient.update({
                 TableName: YOUTUBE_TABLE,
                 Key: {
                     title: getItem.Item.title,
@@ -118,7 +65,7 @@ const handler = (event) => __awaiter(void 0, void 0, void 0, function* () {
                 },
                 ReturnValues: 'UPDATED_NEW'
             }));
-            yield Promise.all(arr).catch(err => {
+            yield Promise.all(params).catch(err => {
                 return {
                     statusCode: err.statusCode,
                     body: err
@@ -126,12 +73,12 @@ const handler = (event) => __awaiter(void 0, void 0, void 0, function* () {
             });
         }
         else {
-            let params = {
+            const batchPutItems = {
                 RequestItems: {
                     'youtube-table-dev': y
                 }
             };
-            yield docClient.batchWrite(params).promise();
+            yield docClient.batchWrite(batchPutItems).promise();
         }
     }
     return {

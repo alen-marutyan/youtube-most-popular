@@ -13,59 +13,7 @@ const service = google.youtube({
 })
 
 export const handler = async (event) => {
-  // const res = await service.videos.list({
-  //   "part": [
-  //     "snippet, contentDetails, statistics"
-  //   ],
-  //   "chart": "mostPopular",
-  // });
-  // const y = [];
-  // res.data.items.forEach(el => {
-  //   y.push({
-  //     PutRequest: {
-  //       Item: {
-  //         title: el.snippet.title,
-  //         count: 0
-  //       }
-  //     }
-  //   });
-  // });
-  // for (const el of res.data.items) {
-  //   const getItem = await docClient.get({
-  //     TableName: YOUTUBE_TABLE,
-  //     Key: {
-  //       title: el.snippet.title,
-  //     }
-  //   }).promise();
-  //   if (getItem.Item) {
-  //     await docClient.update({
-  //       TableName: YOUTUBE_TABLE,
-  //       Key: {
-  //         title: getItem.Item.title,
-  //       },
-  //       UpdateExpression: "set #createdate = :createdate",
-  //       ExpressionAttributeNames: {
-  //         '#createdate': 'count'
-  //       },
-  //       ExpressionAttributeValues: {
-  //         ':createdate': getItem.Item.count + 1
-  //       },
-  //       ReturnValues: 'UPDATED_NEW'
-  //     }).promise();
-  //   }
-  //   else {
-  //     await docClient.put({
-  //       TableName: YOUTUBE_TABLE,
-  //       Item: {
-  //         title: el.snippet.title,
-  //         count: 0,
-  //       }
-  //     }).promise();
-  //   }
-  // }
-  // return {
-  //   statusCode: 200
-  // };
+
   const res = await service.videos.list({
     "part": [
       "snippet, contentDetails, statistics"
@@ -88,7 +36,7 @@ export const handler = async (event) => {
   });
 
   let getItem;
-  let arr = [];
+  const params = [];
   for (const el of res.data.items){
     getItem = await docClient.get({
       TableName: YOUTUBE_TABLE,
@@ -100,7 +48,7 @@ export const handler = async (event) => {
 
     if (getItem.Item){
 
-      arr.push(docClient.update({
+      params.push(docClient.update({
         TableName: YOUTUBE_TABLE,
         Key: {
           title: getItem.Item.title,
@@ -116,20 +64,20 @@ export const handler = async (event) => {
       })
       );
 
-      await Promise.all(arr).catch(err=>{
+      await Promise.all(params).catch(err=>{
         return {
           statusCode: err.statusCode,
           body: err
         }
       })
     }else {
-      let params = {
+      const batchPutItems = {
         RequestItems: {
           'youtube-table-dev': y
         }
       };
 
-      await docClient.batchWrite(params).promise();
+      await docClient.batchWrite(batchPutItems).promise();
 
     }
   }

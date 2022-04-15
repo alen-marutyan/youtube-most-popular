@@ -37,7 +37,7 @@ provider:
 
 
 functions:
-  loginUser:
+  mostPopular:
     handler: dist/app.handler
     environment:
       YouTube_API: ${ssm:/YouTube_API}
