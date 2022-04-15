@@ -48,7 +48,7 @@ export const handler = async (event) => {
 
     if (getItem.Item){
 
-      params.push(docClient.update({
+      await docClient.update({
         TableName: YOUTUBE_TABLE,
         Key: {
           title: getItem.Item.title,
@@ -61,15 +61,7 @@ export const handler = async (event) => {
           ':createdate' : getItem.Item.count+1
         },
         ReturnValues : 'UPDATED_NEW'
-      })
-      );
-
-      await Promise.all(params).catch(err=>{
-        return {
-          statusCode: err.statusCode,
-          body: err
-        }
-      })
+      }).promise();
     }else {
       const batchPutItems = {
         RequestItems: {

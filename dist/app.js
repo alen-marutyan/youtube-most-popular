@@ -51,7 +51,7 @@ const handler = (event) => __awaiter(void 0, void 0, void 0, function* () {
             }
         }).promise();
         if (getItem.Item) {
-            params.push(docClient.update({
+            yield docClient.update({
                 TableName: YOUTUBE_TABLE,
                 Key: {
                     title: getItem.Item.title,
@@ -64,13 +64,7 @@ const handler = (event) => __awaiter(void 0, void 0, void 0, function* () {
                     ':createdate': getItem.Item.count + 1
                 },
                 ReturnValues: 'UPDATED_NEW'
-            }));
-            yield Promise.all(params).catch(err => {
-                return {
-                    statusCode: err.statusCode,
-                    body: err
-                };
-            });
+            }).promise();
         }
         else {
             const batchPutItems = {
